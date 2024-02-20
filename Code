@@ -1,0 +1,71 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.StringTokenizer;
+
+public class URLAnalyzer {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        // Input the word to search for
+        System.out.println("Enter the word to search for:");
+        String keyword = scanner.nextLine().trim().toLowerCase(); // convert to lowercase for case-insensitive comparison
+
+        // Input URLs
+        List<String> urls = new ArrayList<>();
+        System.out.println("Enter the URLs (one URL per line, type 'done' when finished):");
+        String input;
+        while (!(input = scanner.nextLine()).equalsIgnoreCase("done")) {
+            urls.add(input);
+        }
+
+        // Analyze URLs for the keyword
+        List<String> urlsContainingKeyword = new ArrayList<>();
+        for (String urlString : urls) {
+            if (urlContainsExactKeyword(urlString, keyword)) {
+                urlsContainingKeyword.add(urlString);
+            }
+        }
+
+        // Display the number of URLs containing the keyword
+        System.out.println("\nNumber of URLs containing '" + keyword + "': " + urlsContainingKeyword.size());
+
+        // Display the URLs containing the keyword
+        if (!urlsContainingKeyword.isEmpty()) {
+            System.out.println("URLs containing '" + keyword + "':");
+            for (String urlWithKeyword : urlsContainingKeyword) {
+                System.out.println(urlWithKeyword);
+            }
+        } else {
+            System.out.println("No URLs containing '" + keyword + "' found.");
+        }
+
+        System.out.println("Done processing URLs.");
+    }
+
+    private static boolean urlContainsExactKeyword(String urlString, String keyword) {
+        try {
+            URL url = new URL(urlString);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                StringTokenizer tokenizer = new StringTokenizer(line, " .,:;()[]{}<>\"'?!/\\+-_*&^%$#@~`|"); // Custom delimiters for tokenization
+                while (tokenizer.hasMoreTokens()) {
+                    String token = tokenizer.nextToken().toLowerCase();
+                    if (token.equals(keyword)) {
+                        reader.close();
+                        return true;
+                    }
+                }
+            }
+            reader.close();
+        } catch (IOException e) {
+            System.err.println("Error reading URL: " + urlString + " - " + e.getMessage());
+        }
+        return false;
+    }
+}
