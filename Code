@@ -1,71 +1,58 @@
-import java.io.BufferedReader;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.StringTokenizer;
 
-public class URLAnalyzer {
+public class UrlAnalyser {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        // Input the word to search for
-        System.out.println("Enter the word to search for:");
-        String keyword = scanner.nextLine().trim().toLowerCase(); // convert to lowercase for case-insensitive comparison
+        // Prompt user to input word to search for
+        System.out.print("Enter a word to search for: ");
+        String word = scanner.nextLine().trim().toLowerCase(); // Convert to lowercase for case-insensitive search
 
-        // Input URLs
+        // Prompt user to input URLs, each on a new line
+        System.out.println("Enter the URLs (one per line, type 'done' when finished):");
         List<String> urls = new ArrayList<>();
-        System.out.println("Enter the URLs (one URL per line, type 'done' when finished):");
-        String input;
-        while (!(input = scanner.nextLine()).equalsIgnoreCase("done")) {
-            urls.add(input);
+        String urlInput;
+        while (!(urlInput = scanner.nextLine()).equalsIgnoreCase("done")) {
+            urls.add(urlInput);
         }
 
-        // Analyze URLs for the keyword
-        List<String> urlsContainingKeyword = new ArrayList<>();
-        for (String urlString : urls) {
-            if (urlContainsExactKeyword(urlString, keyword)) {
-                urlsContainingKeyword.add(urlString);
-            }
-        }
+        // Perform search on each URL
+        List<String> matchingUrls = new ArrayList<>();
+        for (String url : urls) {
+            try {
+                Document doc = Jsoup.connect(url).get();
+                String text = doc.text().toLowerCase(); // Get the text of the webpage and convert to lowercase for case-insensitive search
 
-        // Display the number of URLs containing the keyword
-        System.out.println("\nNumber of URLs containing '" + keyword + "': " + urlsContainingKeyword.size());
+                // Split text by whitespace and punctuation marks
+                String[] words = text.split("[\\s\\p{Punct}]+");
 
-        // Display the URLs containing the keyword
-        if (!urlsContainingKeyword.isEmpty()) {
-            System.out.println("URLs containing '" + keyword + "':");
-            for (String urlWithKeyword : urlsContainingKeyword) {
-                System.out.println(urlWithKeyword);
-            }
-        } else {
-            System.out.println("No URLs containing '" + keyword + "' found.");
-        }
-
-        System.out.println("Done processing URLs.");
-    }
-
-    private static boolean urlContainsExactKeyword(String urlString, String keyword) {
-        try {
-            URL url = new URL(urlString);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                StringTokenizer tokenizer = new StringTokenizer(line, " .,:;()[]{}<>\"'?!/\\+-_*&^%$#@~`|"); // Custom delimiters for tokenization
-                while (tokenizer.hasMoreTokens()) {
-                    String token = tokenizer.nextToken().toLowerCase();
-                    if (token.equals(keyword)) {
-                        reader.close();
-                        return true;
+                // Check for exact matches of the word
+                for (String w : words) {
+                    if (w.equals(word)) { // Exact match (case-insensitive)
+                        matchingUrls.add(url);
+                        break; // Exit loop once a match is found
                     }
                 }
+            } catch (IOException e) {
+                System.err.println("Error accessing URL: " + url);
             }
-            reader.close();
-        } catch (IOException e) {
-            System.err.println("Error reading URL: " + urlString + " - " + e.getMessage());
         }
-        return false;
+
+        // Display the number of URLs containing the word and list those URLs
+        System.out.println("Number of URLs containing the word '" + word + "': " + matchingUrls.size());
+        if (!matchingUrls.isEmpty()) {
+            System.out.println("List of URLs containing the word:");
+            for (String matchingUrl : matchingUrls) {
+                System.out.println(matchingUrl);
+            }
+        } else {
+            System.out.println("No URLs found containing the word '" + word + "'.");
+        }
     }
 }
